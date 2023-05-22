@@ -1,0 +1,380 @@
+---
+title: "Franchises Branding Affect on Burger's Preference"
+author: 
+- Chuheng(Kevin) Yu
+- Tyler Christoforo
+- Wenxuan(David) Yan
+- Yen-chun(Albert) Chen
+- Ziyuan(Ryan) Li
+format:
+  html: default
+  pdf: 
+    fontsize: small
+highlight-style: pygments
+
+---
+
+```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+#options(scipen=1, digits=3)
+
+library(data.table)
+library(ggplot2)
+library(ggpubr)
+library(data.table)
+library(fixest)
+library(lubridate)
+library(modelsummary)
+library(dplyr)
+```
+
+# Introduction
+
+  Inspired by a study on fashion branding, our group decided to study the effect of fast food franchise branding on burger consumption specifically. IBIS world has stated that the market size for burger restaurants is estimated to be 163.3 billion in 2023. On the other hand, the fast food industry’s market size is estimated to be around 400 billion. With a huge market and multiple players in the industry, many fast food chains commonly include burgers. Therefor this naturally creates directional decisions. Which restaurant’s burger to choose? Given the prices are not far apart, our group decided to study the effect of fast food franchises’ brandings. This was carried out by conducting a survey on how people would choose a burger, given all the other visuals are extremely similar but with a fast food franchise brand versus a local burger franchise.
+
+
+# Methodology
+
+## Experiment goals
+
+  Our group’s goal was to explore the effect of fast food franchise brandings on people’s decisions. The targeted audience was young adults, ages ranging from 21 to 30, many of whom are familiar with fast food franchises.
+
+## Survery design
+
+  The design ideology for our survey was to compare similar pictures of burgers but with different branding. Since more well known local brands may cause unintended bias and interfere with our experiment, we have searched for existing local brands that are lesser known to the public. This was chosen based on the popularity of Yelp’s list. On the other hand, the fast food franchise logos are directly used, without any modification.
+	The second component is the picture of the burger. Because some fast food franchises have very representative burgers, for example, a Big Mac or a Whopper; We would have to stray away from these choices. We decided to find generic pictures of burgers without any hints of brand names. Other factors we considered were how the burger looked, how many patties were there, and how stacked does it look, in this way we can reduce people's choices solely based on the picture. Furthermore, we would have all the burgers have white backgrounds. The location fit of the burgers and the logos were all carefully matched up. Both the images were set to fit the same margin of space, although this meant some pictures had to be expanded. For the logos, we would put them in the same top left corner, occupying the same amount of space. Two pictures are put side by side, a picture of a fast food franchise branded burger and a picture of a local branded burger. And they were both presented right in the middle of the page. We repeat this for 5 pages. The two burger locations are randomized, the fast food brand could be on the left or the right, and the local brand burger as well.
+	There are two versions of the survey, the control, and the experiment. The control survey does not have any branding information, there will only be pictures of burgers. The treatment survey includes branding. To analyze the results, we would look into the sum of the options and compare them across groups. The survey includes covariates on gender and age group.
+  In order to minimize the impact of bias and increase the validity of our study, we employed a purely randomized distribution method using Qualtrics randomization blocks for both our control and treatment surveys. Furthermore, we ensured that the order of our survey choices was fully randomized to prevent any potential bias or intentional manipulation.
+
+## Procedure
+
+###Data Explained
+
+  In this study, we collected data on several attributes related to burger consumption and preferences. The attributes included Gender, where 1 represents male, 0 represents female, and 2 indicates no claim was made. Age was categorized into five groups: 1 for ages 0-12, 2 for ages 12-18, 3 for ages 18-25, 4 for ages 25-40, and 5 for ages 40 and above. We also recorded the Frequency of fast food consumption, with 0 indicating two or more times per week, 1 for once per week, 2 for once every two weeks, 3 for once per month, and 4 for never.
+  The Treatment attribute refers to whether the burger picture presented to participants had a brand logo or not, with 0 indicating no logo and 1 signifying the presence of a logo. We asked five questions (BC1-BC5) about participants' burger choices, where 0 meant a local brand was selected, and 1 indicated a fast food brand was chosen. We also recorded participants' Location, with 0 representing those who live outside the Boston area and 1 for those living in Boston.
+  Additionally, we asked participants to rate the importance of various qualities in their burger choices. These qualities included Taste, Price, Appearance, Brand, and Accessibility. For each quality, we created a binary variable (Value_1 to Value_5), where 0 represents that the specific quality was not valued the most, and 1 indicates it was the most valued. Lastly, we recorded the total Score, which represents the number of fast food brand burgers selected by each participant.
+
+
+###Distribution
+
+	The survey was primarily distributed through mid-size social media group chats, slack group chats, and individuals. It was designed to both fit the phone screen and the computer screen. After a period of time, we would collect the results from Qualtrics. 
+  A problem we ran into was distinguishing the burger images, as this shows up in the form of a file name in the results. In order to better prepare and understand the results, we manually categorized the results into a data table. Following the logic of OneHotEncoder, we successfully compile cleaned data for data analysis. A particular procedure to point out is the scoring metric for the burger choices,  every local burger chosen was denoted as 0 and fast food franchise as 1, then a final score column is created by tallying up the scores.
+
+###Data Preparation
+
+  To take a more detailed look at our data table, we have cleaned the data into a structured table. As mentioned, we created multiple covarites, including gender, age group, fast food intake frequency, Boston local knowledge, quality preference for burgers. Gender covers male, female and others; Age group covers five ranges, 0 to 12, 12 to 18, 18 to 25, 25 to 40 and 40 plus. Along with a binary column representing residency in Boston, these make up the demographic information. Residency in Boston would give us better insight on people’s familiarity in terms of local restaurant brands. A person who has residency in Boston would have a greater chance of encountering or just generally aware of local restaurants. This is a good covarite to have as it measures the level of awareness.
+	Fast food intake frequency was divided into weekly basis, monthly basis and never. This covariate takes into account the probability of people’s knowledge of fast food franchise brands. As it is more likely for person to know more about fast food franchises, if they were to have more frequent fast food intakes.
+	In addition, we chose to capture people’s preference of a burger. This was done by offering 5 perspectives and choosing the one that best fits with their motives. These fields cover taste, price, appearance, brand, accessibility; These were created as binary columns denoted as Value 1 to 5. The specific question asked was “Which quality do you prefer the most about a burger?”, this covariate can include additional information about how a person made the burger decision in our survey. 
+
+# Data Analysis
+
+## Exploratory Data Analysis
+
+```{r, include=FALSE}
+data <- fread('ba830_final_data.csv')
+
+#add a total score
+data$score <- data$BC1+data$BC2+data$BC3+data$BC4+data$BC5
+data
+```
+
+```{r, echo=FALSE}
+#Treatment distribution
+temp <- copy(data)
+temp$Treatment[temp$Treatment == 0] <- 'Control Group'
+temp$Treatment[temp$Treatment == 1] <- 'Treatment Group'
+
+table(temp$Treatment)
+```
+Within our dataset, we have an even distribution with 36 treatment and 35 control
+
+```{r,include=FALSE}
+temp$Age[temp$Age == 1] <- '0-12'
+temp$Age[temp$Age == 2] <- '12-18'
+temp$Age[temp$Age == 3] <- '18-25'
+temp$Age[temp$Age == 4] <- '25-40'
+temp$Age[temp$Age == 5] <- '40+'
+```
+
+```{r, echo=FALSE}
+#Age distribution
+table(temp$Age)
+```
+As the result shows, most of our survey respondents are 18 to 25 years old.
+
+```{r,include=FALSE}
+#bar graph for the gender distribution
+temp$Gender[temp$Gender == 0] <- 'Female'
+temp$Gender[temp$Gender == 1] <- 'Male'
+temp$Gender[temp$Gender == 2] <- 'Others'
+```  
+
+```{r,echo=FALSE}
+ggplot(temp, aes(temp$Gender)) +
+  geom_bar(fill = "red") +
+  geom_text(stat='count', aes(label=after_stat(count)), vjust=-0.5) +
+  labs(x = "Gender") + labs(y = "Count") +
+  labs(title = "Gender Distribution")
+```
+According to the bar graph, the total number of respondents was 71, comprising of 25 female respondents, 45 male respondents, and one respondent identifying as non-binary.
+
+```{r, include=FALSE}
+# Bar graph for fast food frequency distribution
+temp$Frequency[temp$Frequency == 0] <- 'More or equal 2 times per week'
+temp$Frequency[temp$Frequency == 1] <- '1 time per week'
+temp$Frequency[temp$Frequency == 2] <- '1 time per 2 weeks'
+temp$Frequency[temp$Frequency == 3] <- '1 time per month '
+temp$Frequency[temp$Frequency == 4] <- 'Never'
+```
+
+```{r, echo=FALSE}
+ggplot(temp, aes(temp$Frequency)) +
+  geom_bar(fill = "red") +
+  geom_text(stat='count', aes(label=after_stat(count))) +
+  labs(x = "Fast Food Frequency") +
+  labs(y = "Count") +
+  labs(title = "Fast Foord Frequency Distribution") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+The majority of respondents reported consuming fast food at a frequency of once per week, while a comparable proportion of participants indicated consuming fast food either two or more times per week, or once every two weeks.
+
+
+```{r, echo=FALSE}
+# Total score distribution within the dataset
+ggplot(temp, aes(temp$score)) +
+  geom_bar(fill = "red") +
+  geom_text(stat='count', aes(label=after_stat(count))) +
+  labs(x = "Number of Fast Food Brand Burgers") +
+  labs(y = "Number of People") +
+  labs(title = "Number of Fast Food Brand Burgers People Choose In Treatment Group")
+```
+In the treatment group of the survey, it was observed that 24 out of 71 respondents selected three out of the five fast food burger options. It is noteworthy that selecting two and selecting four or one option were equally preferred by the participants. Interestingly, a mere three respondents chose to select all five available options.
+
+
+```{r factors-importance, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="Factors Importance"}
+# Load required libraries
+library(dplyr)
+library(scales)
+library(plotly)
+
+# Replace values in the dataset
+temp$Value[temp$Value == 1] <- 'Taste'
+temp$Value[temp$Value == 2] <- 'Price'
+temp$Value[temp$Value == 3] <- 'Appearance'
+temp$Value[temp$Value == 4] <- 'Brand'
+temp$Value[temp$Value == 5] <- 'Accessibility'
+
+# Process the data
+df <- temp %>% 
+  group_by(Value) %>% # Variable to be transformed
+  count() %>% 
+  ungroup() %>% 
+  mutate(percentage = `n` / sum(`n`)) %>% 
+  arrange(percentage) %>%
+  mutate(labels = scales::percent(percentage))
+
+# Create a 3D pie chart using plotly
+pie <- plot_ly(df, labels = ~Value, values = ~percentage, type = "pie", textposition = "inside", textinfo = "percent+label") %>%
+  layout(title = "Factors Importance",
+         scene = list(xaxis = list(title = ""),
+                      yaxis = list(title = ""),
+                      zaxis = list(title = "")),
+         showlegend = TRUE)
+
+# Print the pie chart
+pie
+```
+
+Based on the data depicted in the pie chart, it appears that the majority of the survey respondents have prioritized two key factors when evaluating a product or service, namely price and accessibility.
+
+## Regression Analysis
+
+```{r, message=FALSE, echo=FALSE} 
+
+reg1 = feols(BC1 ~ Gender + Frequency + Treatment + Age 
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Location, data = data, se = 'hetero')
+reg2 = feols(BC2 ~ Gender + Frequency + Treatment + Age 
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Location, data = data, se = 'hetero')
+reg3 = feols(BC3 ~ Gender + Frequency + Treatment + Age 
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Location, data = data, se = 'hetero')
+reg4 = feols(BC4 ~ Gender + Frequency + Treatment + Age 
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Location, data = data, se = 'hetero')
+reg5 = feols(BC5 ~ Gender + Frequency + Treatment + Age 
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Location, data = data, se = 'hetero')
+etable(reg1, reg2, reg3, reg4, reg5)
+```
+As the regression result shows, in reg1,the only statistically significant variable at the 5% level is Frequency, with a coefficient of 0.1424 and a standard error of 0.0568. In reg4, Constant is statistically significant at 1%, this indicate that almost everyone(90%) in that question select the same response. 
+
+
+```{r,message=FALSE, echo=FALSE}
+reg1 = feols(BC1 ~ Gender + Frequency  + Age 
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Location, data = data[Treatment == 1], se = 'hetero')
+reg2 = feols(BC2 ~ Gender + Frequency  + Age 
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Location, data = data[Treatment == 1], se = 'hetero')
+reg3 = feols(BC3 ~ Gender + Frequency  + Age 
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Location, data = data[Treatment == 1], se = 'hetero')
+reg4 = feols(BC4 ~ Gender + Frequency  + Age 
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Location, data = data[Treatment == 1], se = 'hetero')
+reg5 = feols(BC5 ~ Gender + Frequency  + Age 
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Location, data = data[Treatment == 1], se = 'hetero')
+
+
+etable(reg1, reg2, reg3, reg4,reg5)
+```
+Age's coefficient is 0.3545, implying a one-unit age group increase is tied to a 0.3545 BC3 increase. In Reg4, a one-unit frequency increase results in a 0.2069 BC4 decrease, while a one-unit age group increase results in a 0.2610 BC4 decrease. Valuing price the most decreases BC4 by 0.6033, while valuing brand the most increases BC4 by 0.6567. Reg5 suggests valuing appearance the most corresponds to a 0.3457 BC5 increase.
+
+```{r, message=FALSE, echo=FALSE}
+reg1 = feols(BC1 ~ Gender + Frequency  + Age 
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Location, data = data[Treatment == 0], se = 'hetero')
+reg2 = feols(BC2 ~ Gender + Frequency  + Age 
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Location, data = data[Treatment == 0], se = 'hetero')
+reg3 = feols(BC3 ~ Gender + Frequency  + Age 
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Location, data = data[Treatment == 0], se = 'hetero')
+reg4 = feols(BC4 ~ Gender + Frequency  + Age 
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Location, data = data[Treatment == 0], se = 'hetero')
+reg5 = feols(BC5 ~ Gender + Frequency  + Age 
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Location, data = data[Treatment == 0], se = 'hetero')
+
+
+etable(reg1, reg2, reg3, reg4,reg5)
+```
+In Reg2, the coefficient of 1.318 suggests the predicted value of BC2 is 1.318 when all other variables are held constant at their reference levels. In Reg3, being male is associated with a 0.3909 BC3 decrease compared to being female, while valuing appearance the most is linked to a 0.6056 BC3 decrease. In Reg4, valuing appearance the most is associated with a 0.7005 BC4 increase, while in Reg5, it is linked to a 0.5580 BC5 decrease.
+
+```{r, message=FALSE, echo=FALSE}
+#Fixed Frequency
+
+reg1 = feols(BC1 ~ Gender  + Treatment + Age + Location
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Location | Frequency, data = data, se = 'hetero')
+reg2 = feols(BC2 ~ Gender  + Treatment + Age + Location
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Location | Frequency, data = data, se = 'hetero')
+reg3 = feols(BC3 ~ Gender  + Treatment + Age + Location
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Location | Frequency, data = data, se = 'hetero')
+reg4 = feols(BC4 ~ Gender  + Treatment + Age + Location
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Location | Frequency, data = data, se = 'hetero')
+reg5 = feols(BC5 ~ Gender  + Treatment + Age + Location
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Location | Frequency, data = data, se = 'hetero')
+
+
+etable(reg1, reg2, reg3, reg4,reg5)
+```
+In reg4's coefficient of -0.2313 (significant at 5% level) indicates that a one-unit age category increase results in a 0.2313 BC4 decrease, while controlling for fixed-effects of fast food eating frequency and keeping other variables constant.
+
+```{r, message=FALSE, echo=FALSE}
+#Fixed Location
+
+reg1 = feols(BC1 ~ Gender  + Treatment + Age + Location
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Frequency | Location, data = data, se = 'hetero')
+reg2 = feols(BC2 ~ Gender  + Treatment + Age + Location
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Frequency | Location, data = data, se = 'hetero')
+reg3 = feols(BC3 ~ Gender  + Treatment + Age + Location
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Frequency | Location, data = data, se = 'hetero')
+reg4 = feols(BC4 ~ Gender  + Treatment + Age + Location
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Frequency | Location, data = data, se = 'hetero')
+reg5 = feols(BC5 ~ Gender  + Treatment + Age + Location
+             + Value_1 + Value_2 + Value_3 + Value_4 +Value_5 
+             + Frequency | Location, data = data, se = 'hetero')
+
+
+etable(reg1, reg2, reg3, reg4,reg5)
+```
+In reg1, the coefficient of 0.1424 shows that a one-unit increase in eating frequency corresponds to a 0.1424 increase while controlling for the fixed-effects of location and keeping other variables constant.
+
+
+```{r, message=FALSE, echo=FALSE}
+#Covariant
+
+reg1 = feols(BC1 ~ Gender * Frequency * Location * Age
+               , data = data[Treatment == 0], se = 'hetero')
+reg2 = feols(BC2 ~ Gender * Frequency * Location * Age
+               , data = data[Treatment == 0], se = 'hetero')
+reg3 = feols(BC3 ~ Gender * Frequency * Location * Age
+               , data = data[Treatment == 0], se = 'hetero')
+reg4 = feols(BC4 ~ Gender * Frequency * Location * Age
+               , data = data[Treatment == 0], se = 'hetero')
+reg5 = feols(BC5 ~ Gender * Frequency * Location * Age
+               , data = data[Treatment == 0], se = 'hetero')
+
+etable(reg1, reg2, reg3, reg4,reg5)
+```
+Reg2's intercept of -7.092 (significant at 1% level) indicates BC2's expected value when other variables are 0, with no interaction effects. Being male (coefficient of 5.719, significant at 1% level), increasing frequency (coefficient of 2.442) and age (coefficient of 2.519) all have positive relationships with BC2, while the interaction effects of gender x age (coefficient of -1.871) and frequency x age (coefficient of -0.7696) negatively affect BC2. Reg3's intercept of 7.615 (significant at 5% level) implies BC3's expected value when other variables are 0, with no interaction effects. Being male (coefficient of -5.235, significant at 5% level) and increasing frequency (coefficient of -1.984) negatively link with BC3, while increasing age (coefficient of -2.249, significant at 5% level) negatively associates with BC3. The interaction effects of gender x age (coefficient of 1.599, significant at 5% level) and frequency x age (coefficient of 0.6169, significant at 5% level) positively affect BC3. Reg4 has a positive association between increasing frequency (coefficient of 1.568, significant at 5% level) and BC4. Reg5 has no statistically significant coefficients at the 5% or 1% level.
+
+
+```{r, message=FALSE, echo=FALSE}
+#Covariant
+
+reg1 = feols(BC1 ~ Gender * Frequency * Location * Age
+               , data = data[Treatment == 1], se = 'hetero')
+reg2 = feols(BC2 ~ Gender * Frequency * Location * Age
+               , data = data[Treatment == 1], se = 'hetero')
+reg3 = feols(BC3 ~ Gender * Frequency * Location * Age
+               , data = data[Treatment == 1], se = 'hetero')
+reg4 = feols(BC4 ~ Gender * Frequency * Location * Age
+               , data = data[Treatment == 1], se = 'hetero')
+reg5 = feols(BC5 ~ Gender * Frequency * Location * Age
+               , data = data[Treatment == 1], se = 'hetero')
+
+etable(reg1, reg2, reg3, reg4,reg5)
+```
+In reg1 has a negative association between being male, increasing location, and age with BC1, while reg2 has a negative effect of gender x frequency on BC2. Reg3 has no interaction effects and a positive intercept, indicating the expected value of BC3. Reg4 has negative associations with location and age on BC4, and mixed interaction effects of gender x frequency, location x age, and gender x frequency x age. Reg5 shows a positive association between increasing location and BC5.
+
+```{r, echo=FALSE}
+data_c = data[data$Treatment == 0]
+data_t = data[data$Treatment == 1]
+```
+
+```{r, echo=FALSE}
+t.test(data_c$BC1,data_t$BC1)
+t.test(data_c$BC2,data_t$BC2)
+t.test(data_c$BC3,data_t$BC3)
+t.test(data_c$BC4,data_t$BC4)
+t.test(data_c$BC5,data_t$BC5)
+```
+The code conducts Two Sample t-tests on five variables, BC1 through BC5, to compare the mean values between the Treatment group (labeled as 1) and the Control group (labeled as 0). The output displays the t-value, degrees of freedom, p-value, and confidence interval for each test, along with the sample means for each group. Among the five variables, BC2 and BC5 have p-values of 0.7225 and 0.05518, respectively, indicating that there is no significant difference in mean values between the two groups for BC2, while a significant difference may exist for BC5 at the 5% level. The results for BC1, BC3, and BC4 do not suggest any statistically significant differences in mean values at the 5% level.
+
+# Limitation
+
+  After receiving feedback and revisiting the survey results, our group has reflected upon certain areas that can be optimized.
+
+## Picture quality
+
+  As mentioned in the Survey Design section, some pictures were modified to make them fit-to-size. In this process, some burgers appeared larger than they would have been. Thus creating a misconception that the burger or the meat in between is larger. This limitation could have caused people to make their decisions based on meat size, or even partially factoring it in. A way to adjust this would be better images, similar sized burgers.
+
+## A lack of follow-up detailed question
+
+  In hindsight, we realized follow-up questions could have increased our significance. One of these questions could have been “Have you heard of these brands” after they make their decision. A broader question could have targeted the familiarity of Boston and its knowledge of local brands. This could be “How long have you lived in Boston”, and “How familiar are you with local restaurants and their logos”. Adding these questions can effectively help with this low significance issue.
+
+## Different levels of well knownness
+
+  This limitation revolves around different people’s knowledge of fast food brands that might be vastly different. An example of this is Sonic, Sonic generally has lesser popularity, and the ones who know of them are fewer than the ones that don’t. Similarly, people’s opinions on these particular fast food franchises could be very different. One might strongly dislike McDonalds, while one is an avid fan. This naturally takes on some form of bias. And it is difficult to reduce, due to feelings towards brands that are already pre-existing. 
+
+# Conclusion
+  In this study, we aimed to examine the effect of fast food franchise branding on burger consumption among . The experimental design involved comparing pictures of similar-looking burgers with differing branding, either from fast food franchises or lesser-known local brands. Our analysis showed that the frequency of fast food consumption was a statistically significant factor in participants' burger choice, while other factors such as age, gender, and values placed on various aspects of a burger had mixed results.
+
+  There were limitations in our study, including picture quality, lack of follow-up questions, and varying levels of brand familiarity among participants. Future research can address these limitations by selecting better-quality images, incorporating more detailed follow-up questions, and considering the role of brand familiarity and preferences among the participants.
+
+  Overall, our findings suggest that branding plays a role in consumers' burger choices. However, other factors, such as personal preferences and fast food eating frequency, can also influence the decision-making process. This insight can be valuable for both fast food franchises and local burger restaurants, as it highlights the importance of branding strategies and the need to consider individual consumer preferences when designing marketing campaigns.
+
